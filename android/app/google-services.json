@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "7691087380",
+    "firebase_url": "https://rainapp-c9dad.firebaseio.com",
+    "project_id": "rainapp-c9dad",
+    "storage_bucket": "rainapp-c9dad.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:7691087380:android:876f94e133dc9874d8c101",
+        "android_client_info": {
+          "package_name": "com.example.weather_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "7691087380-c0nu00q87865sir3n7j4s9uskk9oaipl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGjGWRvJ9sPusVSu5Jl3e-mgYQSi2H5A0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "7691087380-c0nu00q87865sir3n7j4s9uskk9oaipl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
