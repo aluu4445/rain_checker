@@ -1,3 +1,5 @@
+// class for parsing the JSON from the weather API call
+
 class WeatherForecast {
   List<Data> data;
   String cityName;

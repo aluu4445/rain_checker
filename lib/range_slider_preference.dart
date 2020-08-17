@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:preferences/preference_service.dart';
 
+// Mirrors the widgets in the Preferences package but for range sliders instead
+
 class RangeSliderPreference extends StatefulWidget {
   final String title;
   final String desc;

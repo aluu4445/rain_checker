@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:weather_app/main.dart' as main;
 
+// page for allowing the user to get the rain forecast for the current day or the next day
+
 class CheckRain extends StatefulWidget {
   @override
   _CheckRainState createState() => _CheckRainState();
