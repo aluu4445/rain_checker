@@ -2,7 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class RainNotification {
 
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =  new FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = new FlutterLocalNotificationsPlugin();
 
   // notification that tells the user it's going to rain that day
   Future<void> rainNotification() async {
@@ -40,3 +40,4 @@ class RainNotification {
 
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
+}

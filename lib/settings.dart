@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:preferences/preferences.dart';
 import 'package:google_maps_webservice/places.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
-import 'package:weather_app/SliderPreference.dart';
-import 'package:weather_app/RangeSliderPreference.dart';
+import 'package:weather_app/slider_preference.dart';
+import 'package:weather_app/range_slider_preference.dart';
 import 'package:weather_app/keys.dart' as keys;
 
 const kGoogleApiKey = keys.kGoogleApiKey;
