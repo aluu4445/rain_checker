@@ -29,14 +29,14 @@ class _CheckRainState extends State<CheckRain> {
                 children: <Widget>[
                   RaisedButton(
                     onPressed: () async {
-                      await main.getTodayForecast();
+                      await main.getForecast('today');
                       setState(() {});
                     },
                     child: Text('Today'),
                   ),
                   RaisedButton(
                     onPressed: () async {
-                      await main.getTomorrowForecast();
+                      await main.getForecast('tomorrow');
                       setState(() {});
                     },
                     child: Text('Tomorrow'),

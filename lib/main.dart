@@ -15,9 +15,6 @@ import 'package:weather_app/keys.dart' as keys;
 // TODO: add push notifications to iOS
 const weatherAPIKey = keys.weatherAPIKey;
 
-const rainNotify = "rainNotify";
-bool rainCheck = false;
-
 void main() async {
 
   // this line is required in async main() to prevent unhandled exception
@@ -46,15 +43,14 @@ void main() async {
   ));
 }
 
-RainNotification notif = new RainNotification();
 
 // Check the rain forecast and send the correct notification
 void callbackDispatcher() {
   Workmanager.executeTask((task, inputData) async {
     switch (task) {
-      case rainNotify:
-        print("Executing background task");
-        await getTodayForecast();
+      case 'rain_notify':
+        RainNotification notif = new RainNotification();
+        bool rainCheck = await getForecast('today');
         if (rainCheck) await notif.rainNotification();
         else await notif.noRainNotification();
     }
@@ -62,21 +58,24 @@ void callbackDispatcher() {
   });
 }
 
-WeatherRepository test = new WeatherRepository(
-    weatherApiClient: WeatherApiClient(httpClient: http.Client()));
-
 String forecast = "";
 
-Future<void> getTodayForecast() async {
+Future<bool> getForecast(String day) async {
 
   await PrefService.init();
 
   // get the weather forecast
-  final WeatherForecast weather = await test.getWeather(settings.getLocation());
+  WeatherRepository weatherRepo = new WeatherRepository(
+      weatherApiClient: WeatherApiClient(httpClient: http.Client()));
+
+  final WeatherForecast weather = await weatherRepo.getWeather(settings.getLocation());
   final List<Data> weatherData = weather.data;
 
   // get today's date
-  final String today = weatherData[0].timestampLocal.substring(0, 10);
+  final DateTime today = DateTime.parse(weatherData[0].timestampLocal);
+
+  // get the final second of today
+  final todayLast = DateTime(today.year, today.month, today.day, 23, 59, 59);
 
   forecast = "";
   bool raining = false;
@@ -84,80 +83,25 @@ Future<void> getTodayForecast() async {
     int chance = x.pop;
 
     // initialise the current date and time for the data set
-    String timestamp = x.timestampLocal;
-    String date = timestamp.substring(0, 10);
-    String rainTime = timestamp.substring(11,16);
-    String hour = rainTime.substring(0,2);
+    DateTime dataTime = DateTime.parse(x.timestampLocal);
+    String hour = dataTime.hour.toString();
 
-    // ignore data point if outside prescribed hours
-    if (int.parse(hour) < settings.getStartTime() || int.parse(hour) > settings.getEndTime()) continue;
+    // ignore data if outside prescribed hours
+    if (dataTime.hour < settings.getStartTime() || dataTime.hour > settings.getEndTime()) continue;
 
-    // only look at data from today
-    if (date != today) break;
+    //
+    if ((day == 'today' && today.day == dataTime.day) || (day == 'tomorrow' && dataTime.isAfter(todayLast) && dataTime.difference(todayLast).inHours < 24)){
+      forecast += 'There is a $chance% chance of rain $day at $hour:00 \n';
+      if (chance > settings.getRainChance()) raining = true;
 
-    // show the chance of rain at every hour
-    forecast += 'There is a $chance% chance of rain today at $rainTime\n';
-    // TODO: add a graphical view of the daily rain chance
-    if (chance > settings.getRainChance()) raining = true;
-  }
-
-  rainCheck = true;
-
-  // if it's not raining overwrite the message to say it's not raining today
-  if (!raining) {
-    if (settings.getRainChance() == 0) forecast = 'There is a 0% chance of rain today';
-    else forecast = 'There is a <' + settings.getRainChance().toStringAsFixed(0) + '% chance of rain today';
-    rainCheck = false;
-  }
-
-  print(rainCheck);
-}
-
-Future<void> getTomorrowForecast() async {
-  // get the weather forecast
-  final WeatherForecast weather = await test.getWeather(settings.getLocation());
-  final List<Data> weatherData = weather.data;
-
-  // get today's date
-  final String today = weatherData[0].timestampLocal.substring(0, 10);
-
-  // update the rain forecast and show a corresponding message
-  forecast = "";
-  bool raining = false;
-  int counter = 0;
-  for (Data x in weatherData) {
-    int chance = x.pop;
-
-    // initialise the current date and time for the data set
-    String timestamp = x.timestampLocal;
-    String date = timestamp.substring(0, 10);
-    String rainTime = timestamp.substring(11, 16);
-    String hour = rainTime.substring(0, 2);
-
-    // only look at data from tomorrow
-    if (date == today) continue;
-
-    // keep track of how many hours of tomorrow we've gone through
-    counter++;
-
-    // ignore data point if outside prescribed hours and if not tomorrow
-    if (int.parse(hour) < settings.getStartTime() || int.parse(hour) > settings.getEndTime() || counter >= 24) continue;
-
-    // check if it's raining
-    if (chance > settings.getRainChance()) raining = true;
-
-    // show the chance of rain at every hour
-    forecast += 'There is a $chance% chance of rain tomorrow at $rainTime\n';
-    // TODO: add a graphical view of the daily rain chance
-    if (chance > settings.getRainChance()) raining = true;
+    } else continue;
   }
 
   // if it's not raining overwrite the message to say it's not raining today
   if (!raining) {
-    if (settings.getRainChance() == 0) forecast = 'There is a 0% chance of rain tomorrow';
-    else forecast = 'There is a <' + settings.getRainChance().toStringAsFixed(0) + '% chance of rain tomorrow';
-  }
-
+    forecast = 'There is a 0% chance of rain $day';
+    return false;
+  } else return true;
 }
 
 class MyApp extends StatefulWidget {
@@ -196,8 +140,8 @@ class _MyAppState extends State<MyApp> {
 
                   // schedule a periodic notification
                   await Workmanager.registerPeriodicTask("1",
-                    rainNotify,
-                    frequency: Duration(days:1),
+                    'rain_notify',
+                    frequency: Duration(hours:3),
                     initialDelay: delay,
                   );
 
