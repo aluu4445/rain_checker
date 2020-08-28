@@ -1,4 +1,27 @@
 // class for parsing the JSON from the weather API call
+import 'package:flutter/cupertino.dart';
+import 'package:http/http.dart' as http;
+import 'package:weather_app/keys.dart';
+import 'dart:convert';
+
+class WeatherApiClient {
+  final http.Client httpClient;
+
+  // constructor
+  WeatherApiClient({@required this.httpClient}) : assert(httpClient != null);
+
+  Future<WeatherForecast> fetchWeather(String city) async {
+    final weatherUrl =
+        'https://api.weatherbit.io/v2.0/forecast/hourly?city=$city&key=$weatherAPIKey';
+    final weatherResponse = await this.httpClient.get(weatherUrl);
+    if (weatherResponse.statusCode != 200) {
+      throw Exception('error getting weather for location');
+    }
+
+    final weatherJson = jsonDecode(weatherResponse.body);
+    return WeatherForecast.fromJson(weatherJson);
+  }
+}
 
 class WeatherForecast {
   List<Data> data;

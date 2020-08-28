@@ -24,8 +24,8 @@ class RangeSliderPreference extends StatefulWidget {
     this.title,
     this.localKey, {
     this.desc,
+    this.values,
     @required this.defaultVal,
-    @required this.values,
     @required this.divisions,
     @required this.min,
     @required this.max,

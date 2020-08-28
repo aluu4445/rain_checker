@@ -5,9 +5,7 @@ import 'package:google_maps_webservice/places.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:weather_app/slider_preference.dart';
 import 'package:weather_app/range_slider_preference.dart';
-import 'package:weather_app/keys.dart' as keys;
-
-const kGoogleApiKey = keys.kGoogleApiKey;
+import 'package:weather_app/keys.dart';
 
 // TODO: let the user give permission to user their current location with geolocator
 
@@ -142,6 +140,7 @@ class _SettingsState extends State<Settings> {
 
 doubleToTimeString(value) {
   if (value == 0 || value == 24) return '12am';
+  else if (value == 12) return '12pm';
   else if (value > 12) {
     value = value % 12;
     return value.toStringAsFixed(0) + 'pm';

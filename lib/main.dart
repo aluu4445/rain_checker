@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -6,14 +5,11 @@ import 'package:http/http.dart' as http;
 import 'package:workmanager/workmanager.dart';
 import 'package:weather_app/notifications.dart';
 import 'package:weather_app/weather_data.dart';
-import 'package:weather_app/settings.dart' as settings;
+import 'package:weather_app/settings.dart';
 import 'package:preferences/preferences.dart';
-import 'package:weather_app/check_rain.dart' as checkRain;
-import 'package:weather_app/keys.dart' as keys;
-
+import 'package:weather_app/check_rain.dart';
 
 // TODO: add push notifications to iOS
-const weatherAPIKey = keys.weatherAPIKey;
 
 void main() async {
 
@@ -37,71 +33,63 @@ void main() async {
     initialRoute: '/',
     routes: {
       '/' : (context) => MyApp(),
-      '/settings' : (context) => settings.Settings(),
-      '/check_rain' : (context) => checkRain.CheckRain(),
+      '/settings' : (context) => Settings(),
+      '/check_rain' : (context) => CheckRain(),
     },
   ));
 }
 
+enum dayChoice {today, tomorrow}
+
+// TODO: refactor this global mutable variable
+RainNotification notifications = new RainNotification();
 
 // Check the rain forecast and send the correct notification
 void callbackDispatcher() {
+
   Workmanager.executeTask((task, inputData) async {
     switch (task) {
       case 'rain_notify':
-        RainNotification notif = new RainNotification();
-        bool rainCheck = await getForecast('today');
-        if (rainCheck) await notif.rainNotification();
-        else await notif.noRainNotification();
+        List rainCheck = await getForecast(dayChoice.today);
+        if (rainCheck[0]) await notifications.rainNotification(rainCheck[1]);
+        else await notifications.noRainNotification();
     }
     return Future.value(true);
   });
 }
 
-String forecast = "";
+Future<List> getForecast(dayChoice day) async {
 
-Future<bool> getForecast(String day) async {
-
+  // initialise shared preferences
   await PrefService.init();
 
   // get the weather forecast
-  WeatherRepository weatherRepo = new WeatherRepository(
-      weatherApiClient: WeatherApiClient(httpClient: http.Client()));
+  WeatherApiClient weatherClient = new WeatherApiClient(
+      httpClient: http.Client());
 
-  final WeatherForecast weather = await weatherRepo.getWeather(settings.getLocation());
+  final WeatherForecast weather = await weatherClient.fetchWeather(getLocation());
   final List<Data> weatherData = weather.data;
 
-  // get today's date
+  // get today and tomorrow's date
   final DateTime today = DateTime.parse(weatherData[0].timestampLocal);
+  final DateTime tomorrow = today.add(Duration(days:1));
 
-  // get the final second of today
-  final todayLast = DateTime(today.year, today.month, today.day, 23, 59, 59);
-
-  forecast = "";
-  bool raining = false;
+  // iterate through each data point from the API
   for (Data x in weatherData) {
     int chance = x.pop;
 
     // initialise the current date and time for the data set
     DateTime dataTime = DateTime.parse(x.timestampLocal);
-    String hour = dataTime.hour.toString();
 
     // ignore data if outside prescribed hours
-    if (dataTime.hour < settings.getStartTime() || dataTime.hour > settings.getEndTime()) continue;
+    if (dataTime.hour < getStartTime() || dataTime.hour > getEndTime()) continue;
 
-    //
-    if ((day == 'today' && today.day == dataTime.day) || (day == 'tomorrow' && dataTime.isAfter(todayLast) && dataTime.difference(todayLast).inHours < 24)){
-      forecast += 'There is a $chance% chance of rain $day at $hour:00 \n';
-      if (chance > settings.getRainChance()) raining = true;
-
+    // check if raining on that particular data point
+    if ((day == dayChoice.today && today.day == dataTime.day) || (day == dayChoice.tomorrow && tomorrow.day == dataTime.day)){
+      if (chance > getRainChance()) return [true, dataTime.hour];
     } else continue;
   }
-
-  // if it's not raining overwrite the message to say it's not raining today
-  if (!raining) {
-    forecast = 'There is a 0% chance of rain $day';
-    return false;
-  } else return true;
+  return [false, null];
 }
 
 class MyApp extends StatefulWidget {
@@ -132,11 +120,13 @@ class _MyAppState extends State<MyApp> {
                   // calculate the initial delay required to schedule the notification properly
                   final now = DateTime.now();
                   Duration delay;
-                  if (now.hour > settings.getNotificationTime()) {
-                    delay = now.difference(DateTime(now.year, now.month, now.day + 1, settings.getNotificationTime().toInt(), 0)).abs();
+                  if (now.hour > getNotificationTime()) {
+                    delay = now.difference(DateTime(now.year, now.month, now.day + 1, getNotificationTime().toInt(), 0)).abs();
                   } else {
-                    delay = now.difference(DateTime(now.year, now.month, now.day, settings.getNotificationTime().toInt(), 0)).abs();
+                    delay = now.difference(DateTime(now.year, now.month, now.day, getNotificationTime().toInt(), 0)).abs();
                   }
+
+                  print(delay);
 
                   // schedule a periodic notification
                   await Workmanager.registerPeriodicTask("1",
@@ -201,33 +191,4 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class WeatherApiClient {
-  final http.Client httpClient;
-
-  // constructor
-  WeatherApiClient({@required this.httpClient}) : assert(httpClient != null);
-
-  Future<WeatherForecast> fetchWeather(String city) async {
-    final weatherUrl =
-        'https://api.weatherbit.io/v2.0/forecast/hourly?city=$city&key=$weatherAPIKey';
-    final weatherResponse = await this.httpClient.get(weatherUrl);
-    if (weatherResponse.statusCode != 200) {
-      throw Exception('error getting weather for location');
-    }
-
-    final weatherJson = jsonDecode(weatherResponse.body);
-    return WeatherForecast.fromJson(weatherJson);
-  }
-}
-
-class WeatherRepository {
-  final WeatherApiClient weatherApiClient;
-
-  WeatherRepository({@required this.weatherApiClient})
-      : assert(weatherApiClient != null);
-
-  Future<WeatherForecast> getWeather(String city) async {
-    return weatherApiClient.fetchWeather(city);
-  }
-}
 

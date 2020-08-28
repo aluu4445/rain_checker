@@ -1,11 +1,12 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:weather_app/settings.dart';
 
 class RainNotification {
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = new FlutterLocalNotificationsPlugin();
 
   // notification that tells the user it's going to rain that day
-  Future<void> rainNotification() async {
+  Future<void> rainNotification(int time) async {
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
         'your channel id', 'your channel name', 'your channel description',
         importance: Importance.Max, priority: Priority.High, ticker: 'ticker');
@@ -13,7 +14,7 @@ class RainNotification {
     var platformChannelSpecifics = NotificationDetails(
         androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
     await flutterLocalNotificationsPlugin.show(
-        0, 'Rain Checker', 'Today is raining', platformChannelSpecifics,
+        0, 'Rain Checker', 'It will rain today at ' + doubleToTimeString(time), platformChannelSpecifics,
         payload: 'item x');
   }
 

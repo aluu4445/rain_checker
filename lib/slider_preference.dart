@@ -25,8 +25,8 @@ class SliderPreference extends StatefulWidget {
     this.title,
     this.localKey, {
     this.desc,
+    this.value,
     @required this.defaultVal,
-    @required this.value,
     @required this.divisions,
     @required this.min,
     @required this.max,
